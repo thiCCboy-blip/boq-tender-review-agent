@@ -6,7 +6,7 @@ This is a portfolio project built to demonstrate document extraction, structured
 
 ## Live demo
 
-[Open the deployed Streamlit app](https://boq-tender-review-agent-cfxirng3qtcypetdrvnqbu.streamlit.app/)
+[Open the deployed Streamlit app](https://amruu-boq-agent.streamlit.app/)
 
 ## Features
 
