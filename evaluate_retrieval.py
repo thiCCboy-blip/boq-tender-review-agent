@@ -11,11 +11,11 @@ otherwise so the comparison still produces a result on a clean machine.
 import json
 from pathlib import Path
 
-from retrieval import Embedder, get_ranker
+from retrieval import build_embedder, get_ranker
 
 CASES_PATH = Path("data/retrieval_cases.json")
 REPORT_PATH = Path("data/retrieval_report.json")
-METHODS = ("token_overlap", "embedding", "hybrid")
+METHODS = ("token_overlap", "tfidf", "embedding", "hybrid")
 
 def load_cases(path=CASES_PATH):
     with open(path, "r", encoding="utf-8") as file:
@@ -61,6 +61,7 @@ def evaluate_method(cases, method, embedder):
 
     return {
         "method": method,
+        "backend": embedder.model if embedder is not None else "token_overlap",
         "case_count": total,
         "metrics": {
             "hit_rate_at_1": round(hit_at_1 / total, 3) if total else 0.0,
@@ -71,23 +72,24 @@ def evaluate_method(cases, method, embedder):
     }
 
 
-def compare_methods(cases, embedder, methods=METHODS):
-    """Run every strategy, tolerating an unavailable embeddings backend.
+def compare_methods(cases, methods=METHODS, api_key=None):
+    """Run every strategy, tolerating an unavailable vector backend.
 
-    A quota or network failure must not abort the comparison, because the
-    baseline is still a valid result and the reader needs to know that the
-    semantic arms did not run rather than silently reporting fewer methods.
+    A quota, network, or missing-credential failure must not abort the
+    comparison, because the strategies that did run are still valid results
+    and the reader needs to know which were skipped and why.
     """
     results = {}
     skipped = {}
     for method in methods:
         try:
+            embedder = build_embedder(method, cases, api_key=api_key)
             outcome = evaluate_method(cases, method, embedder)
         except Exception as error:  # noqa: BLE001 - reported, not swallowed
             skipped[method] = f"{type(error).__name__}: {error}"
             continue
         if outcome is None:
-            skipped[method] = "embedding backend unavailable"
+            skipped[method] = "vector backend unavailable"
         else:
             results[method] = outcome
     return results, skipped
@@ -95,14 +97,14 @@ def compare_methods(cases, embedder, methods=METHODS):
 
 def format_comparison(results, skipped):
     lines = [
-        f"{'method':<16}{'hit@1':>8}{'hit@3':>8}{'MRR':>8}",
-        "-" * 40,
+        f"{'method':<16}{'hit@1':>8}{'hit@3':>8}{'MRR':>8}  backend",
+        "-" * 62,
     ]
     for method, outcome in results.items():
         metrics = outcome["metrics"]
         lines.append(
             f"{method:<16}{metrics['hit_rate_at_1']:>8.3f}"
-            f"{metrics['hit_rate_at_3']:>8.3f}{metrics['mrr']:>8.3f}"
+            f"{metrics['hit_rate_at_3']:>8.3f}{metrics['mrr']:>8.3f}  {outcome['backend']}"
         )
     if skipped:
         lines.append("")
@@ -113,12 +115,11 @@ def format_comparison(results, skipped):
 
 def main():
     cases = load_cases()
-    embedder = Embedder()
-    results, skipped = compare_methods(cases, embedder)
+    results, skipped = compare_methods(cases)
 
     report = {
         "case_count": len(cases),
-        "embedding_model": embedder.model if set(results) - {"token_overlap"} else None,
+        "methods_run": {method: outcome["backend"] for method, outcome in results.items()},
         "skipped_methods": skipped,
         "methods": results,
     }

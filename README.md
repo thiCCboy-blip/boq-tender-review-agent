@@ -17,7 +17,7 @@ Project documentation: [case study](CASE_STUDY.md) · [demo script](DEMO_SCRIPT.
 - Uses OpenAI Structured Outputs with Pydantic schemas.
 - Matches BOQ rows to extracted tender items using token-overlap scoring.
 - Normalizes common unit variants such as `cubic metres` → `m3` and `tonnes` → `t`.
-- Compares token-overlap, embedding, and hybrid retrieval strategies against a labelled set of synonym and hard-negative cases.
+- Compares token-overlap, TF-IDF, embedding, and hybrid retrieval strategies against a labelled set of synonym and hard-negative cases.
 - Runs deterministic quantity and amount checks.
 - Reports latency, token usage, and optional cost estimates for each AI run.
 - Reports precision, recall, F1, unit accuracy, and citation coverage on labelled sample data.
@@ -134,13 +134,18 @@ The matching layer was originally token-overlap only, on the assumption that it 
 .\.venv\Scripts\python.exe .\evaluate_retrieval.py
 ```
 
-| Strategy | hit@1 | hit@3 | MRR |
-| --- | ---: | ---: | ---: |
-| `token_overlap` | 0.200 | 1.000 | 0.575 |
+| Strategy | hit@1 | hit@3 | MRR | Backend |
+| --- | ---: | ---: | ---: | --- |
+| `token_overlap` | 0.200 | 1.000 | 0.575 | in-process |
+| `tfidf` | 0.200 | 0.900 | 0.558 | in-process |
 
-The lexical matcher places the correct item in the top three candidates for every case, but ranks it first in only one in five. Every failure is a synonym or paraphrase case: `syn-rebar` puts `Reinforcement steel` second to `Rebar fabrication and fixing` because the two share almost no tokens, while the two are the same work item to anyone who reads construction descriptions. That is a real failure mode, not a metric artifact, and it argues for the hybrid strategy.
+The lexical matcher places the correct item in the top three candidates for every case, but ranks it first in only one in five. Every failure is a synonym or paraphrase case: `syn-rebar` puts `Reinforcement steel` second to `Rebar fabrication and fixing` because the two share almost no tokens, while the two are the same work item to anyone who reads construction descriptions. That is a real failure mode, not a metric artifact.
 
-The `embedding` and `hybrid` rows are reported as skipped when no API key or warm cache is available, so the baseline result is still reproducible on a clean machine. Adding credits and re-running populates `data/embedding_cache.json`, after which the comparison is reproducible offline.
+TF-IDF scores identically on hit@1. That is the useful part of the result: inverse document frequency weighting cannot close the gap, because the problem is missing vocabulary rather than poorly weighted vocabulary. The synonym is absent from the description entirely, so no amount of term reweighting will surface it. This is the evidence for why the fix needs semantics rather than a better lexical scorer.
+
+The `embedding` and `hybrid` rows are reported as skipped when no API key or warm cache is available, so the free strategies remain reproducible on a clean machine with no dependencies. Adding credit and re-running populates `data/embedding_cache.json`, after which the comparison is reproducible offline.
+
+The harness reports a skip reason rather than silently presenting fewer strategies, and names the backend behind every row.
 
 As with the extraction fixture, these 20 cases are synthetic and were written by the author. They demonstrate a failure mode and a method for measuring it; they are not a benchmark of production retrieval quality.
 
@@ -153,7 +158,7 @@ As with the extraction fixture, these 20 cases are synthetic and were written by
 - Tender text is sent to the configured OpenAI API when the AI step runs.
 - The project does not currently implement OCR for scanned or image-only PDFs.
 - The matching layer is deliberately explainable and deterministic, but token-overlap scoring measurably underperforms on synonym and paraphrase pairs. See the retrieval strategy comparison for measured results.
-- The retrieval comparison covers 20 synthetic cases written by the author; `embedding` and `hybrid` were not run because the API account had no remaining credit.
+- The retrieval comparison covers 20 synthetic cases written by the author. TF-IDF is a lexical baseline, not a semantic model; the semantic arms (`embedding`, `hybrid`) were not run because the API account had no remaining credit, so the implemented fix is unverified.
 - The application is an assistive tool, not a replacement for professional quantity surveying or procurement review.
 
 ## Project structure
@@ -178,7 +183,7 @@ test_*.py               Automated tests
 
 - OCR support for scanned PDFs.
 - Table-aware BOQ extraction for complex spreadsheets.
-- Enable the hybrid retrieval strategy and re-measure the extraction fixture, since the current matching layer is lexical only and measurably weaker on synonyms.
+- Enable the hybrid retrieval strategy and re-measure the extraction fixture, since the current matching layer is lexical only and measurably weaker on synonyms. TF-IDF was measured and did not close the gap, so a semantic model is the required next step.
 - Expand the retrieval fixture with real, consented tender descriptions.
 - Human review workflow for flagged discrepancies.
 - Identity-based access control, rate limiting, and usage monitoring.

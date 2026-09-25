@@ -7,6 +7,7 @@ data/live_review_report.json
 data/pdf_review_report.json
 data/retrieval_report.json
 data/embedding_cache.json
+data/test_cache.json
 data/uploads/
 .agents/
 .claude/

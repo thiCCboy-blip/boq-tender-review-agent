@@ -1,12 +1,17 @@
+import json
 import math
 
 import pytest
 
 from retrieval import (
     Embedder,
+    OpenAIEmbedder,
+    TfidfEmbedder,
+    build_embedder,
+    build_tfidf_embedder,
     cosine_similarity,
     get_ranker,
-    rank_embedding,
+    rank_by_vector,
     rank_hybrid,
     rank_token_overlap,
     reciprocal_rank_fusion,
@@ -60,7 +65,7 @@ class FakeEmbedder:
         return {text: self.vectors.get(text, [0.0]) for text in texts}
 
 
-def test_rank_embedding_ranks_by_similarity():
+def test_rank_by_vector_ranks_by_similarity():
     embedder = FakeEmbedder(
         {
             "query": [1.0, 0.0],
@@ -68,14 +73,14 @@ def test_rank_embedding_ranks_by_similarity():
             "near": [0.9, 0.1],
         }
     )
-    ranking = rank_embedding("query", make_candidates(["far", "near"]), embedder)
+    ranking = rank_by_vector("query", make_candidates(["far", "near"]), embedder)
 
     assert ranking[0][0] == "near"
 
 
-def test_rank_embedding_tolerates_missing_vector():
+def test_rank_by_vector_tolerates_missing_vector():
     embedder = FakeEmbedder({"query": [1.0, 0.0]})
-    ranking = rank_embedding("query", make_candidates(["unmapped"]), embedder)
+    ranking = rank_by_vector("query", make_candidates(["unmapped"]), embedder)
 
     assert ranking == [("unmapped", 0.0)]
 
@@ -155,14 +160,15 @@ def test_get_ranker_returns_callable_for_lexical():
 
 def test_get_ranker_returns_none_without_embedder():
     assert get_ranker("embedding") is None
+    assert get_ranker("tfidf") is None
     assert get_ranker("hybrid") is None
 
 
-def test_get_ranker_hybrid_does_not_return_embedding():
+def test_get_ranker_tfidf_uses_vector_ranker():
     embedder = FakeEmbedder({"query": [1.0, 0.0], "alpha": [1.0, 0.0]})
-    ranker = get_ranker("hybrid", embedder)
+    ranker = get_ranker("tfidf", embedder)
 
-    assert ranker("query", make_candidates(["alpha"])) == [("alpha", pytest.approx(1 / 61 + 1 / 61))]
+    assert ranker("query", make_candidates(["alpha"])) == [("alpha", pytest.approx(1.0))]
 
 
 def test_get_ranker_rejects_unknown_method():
@@ -174,16 +180,8 @@ def test_get_ranker_rejects_unknown_method():
         raise AssertionError("Expected an unknown method to fail")
 
 
-def test_embedder_returns_cached_vector_without_api_key(tmp_path):
-    cache_path = tmp_path / "cache.json"
-    embedder = Embedder(api_key="", cache_path=cache_path)
-    embedder._cache = {"known text": [0.1, 0.2]}
-
-    assert embedder.embed(["known text"]) == {"known text": [0.1, 0.2]}
-
-
-def test_embedder_missing_key_raises_clear_error(tmp_path):
-    embedder = Embedder(api_key="", cache_path=tmp_path / "missing.json")
+def test_openai_embedder_missing_key_raises_clear_error(tmp_path):
+    embedder = OpenAIEmbedder(api_key="", cache_path=tmp_path / "missing.json")
 
     try:
         embedder.embed(["uncached text"])
@@ -191,3 +189,78 @@ def test_embedder_missing_key_raises_clear_error(tmp_path):
         assert "OPENAI_API_KEY" in str(error)
     else:
         raise AssertionError("Expected a missing API key to fail")
+
+
+def test_openai_embedder_explicit_empty_key_overrides_environment(tmp_path, monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-should-not-be-used")
+    embedder = OpenAIEmbedder(api_key="", cache_path=tmp_path / "cache.json")
+
+    try:
+        embedder.embed(["text"])
+    except RuntimeError as error:
+        assert "OPENAI_API_KEY" in str(error)
+    else:
+        raise AssertionError("An explicit empty key must not fall back to the environment")
+
+
+def test_tfidf_embedder_shares_one_vocabulary(tmp_path):
+    embedder = TfidfEmbedder(corpus=["reinforcement steel", "rebar fixing"], cache_path=tmp_path / "c.json")
+    vectors = embedder.embed(["reinforcement steel", "rebar fixing", "roof covering"])
+
+    lengths = {len(vector) for vector in vectors.values()}
+    assert len(lengths) == 1
+
+
+def test_tfidf_embedder_ranks_shared_terms_above_unrelated(tmp_path):
+    embedder = TfidfEmbedder(
+        corpus=["concrete work to foundations", "roof covering to flat roof", "masonry work"],
+        cache_path=tmp_path / "c.json",
+    )
+    texts = ["concrete work", "concrete work to foundations", "roof covering to flat roof"]
+    vectors = embedder.embed(texts)
+    query = vectors["concrete work"]
+
+    assert cosine_similarity(query, vectors["concrete work to foundations"]) > cosine_similarity(
+        query, vectors["roof covering to flat roof"]
+    )
+
+
+def test_tfidf_embedder_ignores_stale_cache(tmp_path):
+    cache_path = tmp_path / "cache.json"
+    cache_path.write_text(json.dumps({"roof covering": [1.0, 0.0]}), encoding="utf-8")
+    embedder = TfidfEmbedder(corpus=["roof covering", "concrete work"], cache_path=cache_path)
+    vectors = embedder.embed(["roof covering"])
+
+    assert len(vectors["roof covering"]) > 2
+
+
+def test_build_tfidf_embedder_covers_every_candidate():
+    cases = [
+        {
+            "query": "q1",
+            "candidates": [{"description": "a"}, {"description": "b"}],
+        },
+        {
+            "query": "q2",
+            "candidates": [{"description": "c"}],
+        },
+    ]
+    embedder = build_tfidf_embedder(cases, cache_path="data/test_cache.json")
+    vectors = embedder.embed(["a", "b", "c", "q1", "q2"])
+
+    assert len(vectors) == 5
+
+
+def test_build_embedder_returns_tfidf_backend_without_credentials():
+    embedder = build_embedder("tfidf", [], api_key="")
+
+    assert isinstance(embedder, TfidfEmbedder)
+
+
+def test_build_embedder_returns_none_for_unknown_strategy():
+    assert build_embedder("telepathy", []) is None
+
+
+def test_embedder_is_abstract():
+    with pytest.raises(TypeError):
+        Embedder()

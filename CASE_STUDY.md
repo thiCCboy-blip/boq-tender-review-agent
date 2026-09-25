@@ -57,15 +57,18 @@ The matching layer uses token-overlap scoring, chosen for explainability rather 
 - **Synonym and paraphrase pairs** where the same work item is named differently (`Reinforcement steel` / `Rebar fabrication and fixing`).
 - **Hard negatives** where distractors differ from the query by one distinguishing attribute (`Tiling to wet area walls` / `Tiling to wet area floors`).
 
-| Strategy | hit@1 | hit@3 | MRR |
-| --- | ---: | ---: | ---: |
-| `token_overlap` | 0.200 | 1.000 | 0.575 |
+| Strategy | hit@1 | hit@3 | MRR | Backend |
+| --- | ---: | ---: | ---: | --- |
+| `token_overlap` | 0.200 | 1.000 | 0.575 | in-process |
+| `tfidf` | 0.200 | 0.900 | 0.558 | in-process |
 
 The correct item is in the top three for all 20 cases but first in only four. The diagnosis is unambiguous: every failure is a case where the expected description shares no distinguishing tokens with the query. The matcher retrieves the right *neighbourhood* and then orders it incorrectly, which is the specific failure a domain user would report as "it found the section but picked the wrong line."
 
-`embedding` and `hybrid` strategies are implemented in `retrieval.py`; hybrid uses reciprocal rank fusion, which combines the two rankings by position rather than by score, avoiding a tuned weight between an incomparable token-overlap score and a cosine similarity. Both were skipped in the recorded run because the API account had no remaining credit, and the harness reports the skip reason rather than silently presenting fewer strategies. A populated embedding cache makes the comparison reproducible offline.
+A second lexical strategy, TF-IDF with inverse document frequency weighting, was added to separate two explanations for that result. It scores the same 0.200 on hit@1, which rules out the cheaper explanation. The failure is not poorly weighted vocabulary; it is absent vocabulary. "Reinforcement" and "rebar" never co-occur in a candidate list, so no reweighting of the terms that are present can surface the match. This is the argument for a semantic model rather than a better lexical scorer, and it is the reason the fixture was designed with a third strategy in mind rather than an improved second one.
 
-An earlier hypothesis that the embedding path would be available was not confirmed by this run. Closing it requires adding credit and re-running; the honest current state is that the lexical weakness is measured and the fix is implemented but unverified.
+Both reported strategies run with no API key and no third-party dependency, so the table above is reproducible by a reviewer on a clean checkout. `embedding` and `hybrid` strategies are implemented in `retrieval.py`; hybrid uses reciprocal rank fusion, which combines the two rankings by position rather than by score, avoiding a tuned weight between an incomparable token-overlap score and a cosine similarity. Both were skipped in the recorded run because the API account had no remaining credit, and the harness reports the skip reason and names the backend behind each row rather than silently presenting fewer strategies. A populated embedding cache makes the comparison reproducible offline.
+
+An earlier hypothesis that the embedding path would be available was not confirmed by this run. Closing it requires adding credit and re-running; the honest current state is that the lexical weakness is measured, the negative lexical result is confirmed, and the semantic fix is implemented but unverified.
 
 ## Reliability and safety decisions
 

@@ -44,33 +44,42 @@ def test_evaluate_method_token_overlap_produces_metrics():
     assert len(outcome["cases"]) == len(cases)
 
 
-def test_evaluate_method_without_embedder_is_none():
-    assert evaluate_method(load_cases(), "embedding", None) is None
+def test_evaluate_method_records_backend():
+    outcome = evaluate_method(load_cases(), "token_overlap", None)
+
+    assert outcome["backend"] == "token_overlap"
 
 
-def test_compare_methods_records_skip_reason_without_embedder():
-    results, skipped = compare_methods(load_cases(), None)
-
-    assert "token_overlap" in results
-    assert set(skipped) == {"embedding", "hybrid"}
-    for reason in skipped.values():
-        assert reason
-
-
-def test_compare_methods_survives_backend_failure():
-    class BrokenEmbedder:
-        def embed(self, texts):
-            raise RuntimeError("quota exhausted")
-
-    results, skipped = compare_methods(load_cases(), BrokenEmbedder())
+def test_compare_methods_runs_free_strategies_and_reports_paid_skips():
+    results, skipped = compare_methods(load_cases(), api_key="")
 
     assert "token_overlap" in results
-    assert "quota exhausted" in skipped["embedding"]
+    assert "tfidf" in results
+    assert "embedding" in skipped
+
+
+def test_compare_methods_survives_backend_failure(monkeypatch):
+    def broken_embedder(method, cases, api_key=None):
+        raise RuntimeError("quota exhausted")
+
+    monkeypatch.setattr("evaluate_retrieval.build_embedder", broken_embedder)
+    results, skipped = compare_methods(load_cases())
+
+    assert results == {}
+    assert "quota exhausted" in skipped["token_overlap"]
 
 
 def test_format_comparison_lists_skips():
-    results, skipped = compare_methods(load_cases(), None)
+    results, skipped = compare_methods(load_cases(), api_key="")
     output = format_comparison(results, skipped)
 
     assert "token_overlap" in output
+    assert "backend" in output
     assert "skipped" in output
+
+
+def test_format_comparison_reports_backend_per_row():
+    results, skipped = compare_methods(load_cases(), api_key="")
+    output = format_comparison(results, skipped)
+
+    assert "tfidf" in output
