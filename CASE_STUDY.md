@@ -62,7 +62,9 @@ The matching layer uses token-overlap scoring, chosen for explainability rather 
 | `token_overlap` | 0.200 | 1.000 | 0.575 | in-process |
 | `tfidf` | 0.200 | 0.900 | 0.558 | in-process |
 
-The correct item is in the top three for all 20 cases but first in only four. The diagnosis is unambiguous: every failure is a case where the expected description shares no distinguishing tokens with the query. The matcher retrieves the right *neighbourhood* and then orders it incorrectly, which is the specific failure a domain user would report as "it found the section but picked the wrong line."
+The correct item is in the top three for all 20 cases but first in only four. The 16 failures split into 11 synonym or paraphrase cases and 5 hard negatives, and the two groups fail for opposite reasons. The synonym cases have no lexical bridge at all: "Reinforcement steel" and "Rebar fabrication and fixing" share no content token, so the correct item scores near zero. The hard negatives have too much: "Tiling to wet area walls" and "Tiling to wet area floors" differ by one token against a query of "Tiling to wet areas", so the shared tokens outweigh the distinguishing one and the matcher prefers the wrong item with high confidence. A correct ranking in both groups needs something a term-overlap score cannot provide.
+
+The observable effect is that the matcher retrieves the right *neighbourhood* and then orders it incorrectly, which is the specific failure a domain user would report as "it found the section but picked the wrong line."
 
 A second lexical strategy, TF-IDF with inverse document frequency weighting, was added to separate two explanations for that result. It scores the same 0.200 on hit@1, which rules out the cheaper explanation. The failure is not poorly weighted vocabulary; it is absent vocabulary. "Reinforcement" and "rebar" never co-occur in a candidate list, so no reweighting of the terms that are present can surface the match. This is the argument for a semantic model rather than a better lexical scorer, and it is the reason the fixture was designed with a third strategy in mind rather than an improved second one.
 
