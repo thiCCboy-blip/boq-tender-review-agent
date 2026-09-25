@@ -20,7 +20,7 @@ Project documentation: [case study](CASE_STUDY.md) · [demo script](DEMO_SCRIPT.
 - Runs deterministic quantity and amount checks.
 - Reports latency, token usage, and optional cost estimates for each AI run.
 - Reports precision, recall, F1, unit accuracy, and citation coverage on labelled sample data.
-- Provides a Streamlit interface with JSON report download and optional password protection.
+- Provides a Streamlit interface with JSON report download, optional password protection, and a five-review browser-session guard.
 - Includes automated tests for review logic, document loading, comparison, extraction configuration, and evaluation.
 
 ## Tech stack
@@ -85,7 +85,7 @@ Open `http://localhost:8501` if the browser does not open automatically. Upload 
 
 7. Copy the generated `*.streamlit.app` URL for your README, resume, and portfolio.
 
-Never put an API key or app password in `app.py`, `README.md`, or a committed file. The password gate is a basic protection, not a full identity system; add proper authentication, rate limits, and usage monitoring before sharing a production deployment.
+For public live mode, omit `APP_PASSWORD` or set it to an empty string. In that mode, anyone with the URL can run reviews, so configure a strict budget and usage limit at the API provider. Never put an API key or app password in `app.py`, `README.md`, or a committed file.
 
 ## Command-line usage
 
@@ -129,7 +129,8 @@ The multi-case fixture currently reports micro precision `0.889`, recall `0.889`
 
 - Use only non-confidential documents for testing.
 - Uploads are limited to 10 MB per file and are written to a temporary directory for processing and removed afterwards.
-- Set `APP_PASSWORD` in Streamlit Secrets to add a basic access gate to the public demo.
+- The public app allows five AI reviews per browser session; this is a convenience guard, not server-side rate limiting.
+- Leave `APP_PASSWORD` blank for public live mode, or set it in Streamlit Secrets to require a password before review.
 - Tender text is sent to the configured OpenAI API when the AI step runs.
 - The project does not currently implement OCR for scanned or image-only PDFs.
 - The matching layer is deliberately explainable and deterministic, but it is not a replacement for professional quantity surveying or procurement review.

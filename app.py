@@ -41,6 +41,9 @@ def is_file_too_large(uploaded_file):
     return uploaded_file is not None and uploaded_file.size > 10 * 1024 * 1024
 
 
+MAX_REVIEWS_PER_SESSION = 5
+
+
 def load_styles():
     st.markdown(
         """
@@ -225,7 +228,7 @@ with st.sidebar:
     st.divider()
     st.caption("Use only non-confidential documents. Content is sent to the configured OpenAI API for the AI extraction step.")
     if not get_secret("APP_PASSWORD"):
-        st.sidebar.warning("Public demo mode: configure APP_PASSWORD in Streamlit Secrets to protect the app.")
+        st.sidebar.warning("Public live mode: visitors can use the configured API. Set a strict provider budget and usage limit.")
 
 st.markdown(
     """
@@ -291,39 +294,44 @@ with st.container(border=True):
 
 if run_review:
     st.session_state.pop("review_report", None)
-    oversized_files = [
-        uploaded_file.name
-        for uploaded_file in (tender_file, boq_file)
-        if is_file_too_large(uploaded_file)
-    ]
-    if oversized_files:
-        st.error(f"Files must be smaller than 10 MB: {', '.join(oversized_files)}")
+    review_count = st.session_state.get("review_count", 0)
+    if review_count >= MAX_REVIEWS_PER_SESSION:
+        st.error("This browser session has reached the five-review limit. Reload the page to start a new session.")
     else:
-        with tempfile.TemporaryDirectory() as directory:
-            tender_path = Path(directory) / tender_file.name
-            boq_path = Path(directory) / boq_file.name
-            tender_path.write_bytes(tender_file.getvalue())
-            boq_path.write_bytes(boq_file.getvalue())
+        oversized_files = [
+            uploaded_file.name
+            for uploaded_file in (tender_file, boq_file)
+            if is_file_too_large(uploaded_file)
+        ]
+        if oversized_files:
+            st.error(f"Files must be smaller than 10 MB: {', '.join(oversized_files)}")
+        else:
+            st.session_state["review_count"] = review_count + 1
+            with tempfile.TemporaryDirectory() as directory:
+                tender_path = Path(directory) / tender_file.name
+                boq_path = Path(directory) / boq_file.name
+                tender_path.write_bytes(tender_file.getvalue())
+                boq_path.write_bytes(boq_file.getvalue())
 
-            try:
-                tender_text = load_document(tender_path)
-                extraction, metadata = extract_items_with_metadata(
-                    tender_text,
-                    api_key=get_secret("OPENAI_API_KEY"),
-                    model=get_secret("OPENAI_MODEL", "gpt-6-luna"),
-                    input_cost_per_million=get_secret("OPENAI_INPUT_COST_PER_MILLION"),
-                    output_cost_per_million=get_secret("OPENAI_OUTPUT_COST_PER_MILLION"),
-                )
-                extracted_items = extraction.model_dump()["items"]
-                boq_items = load_boq(boq_path)
-                comparisons = compare_items(boq_items, extracted_items)
-                st.session_state["review_report"] = {
-                    "extraction": extracted_items,
-                    "comparisons": comparisons,
-                    "metadata": metadata,
-                }
-            except Exception as error:
-                st.error(f"Review failed: {error}")
+                try:
+                    tender_text = load_document(tender_path)
+                    extraction, metadata = extract_items_with_metadata(
+                        tender_text,
+                        api_key=get_secret("OPENAI_API_KEY"),
+                        model=get_secret("OPENAI_MODEL", "gpt-6-luna"),
+                        input_cost_per_million=get_secret("OPENAI_INPUT_COST_PER_MILLION"),
+                        output_cost_per_million=get_secret("OPENAI_OUTPUT_COST_PER_MILLION"),
+                    )
+                    extracted_items = extraction.model_dump()["items"]
+                    boq_items = load_boq(boq_path)
+                    comparisons = compare_items(boq_items, extracted_items)
+                    st.session_state["review_report"] = {
+                        "extraction": extracted_items,
+                        "comparisons": comparisons,
+                        "metadata": metadata,
+                    }
+                except Exception as error:
+                    st.error(f"Review failed: {error}")
 
 if "review_report" in st.session_state:
     report = st.session_state["review_report"]
