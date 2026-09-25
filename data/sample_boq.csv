@@ -1,0 +1,5 @@
+code,description,quantity,unit,rate,listed_amount
+C-01,Concrete work,120,m3,850,102000
+R-01,Reinforcement steel,2,t,65000,125000
+E-01,Electrical wiring,1,lot,50000,47500
+P-01,Painting work,100,m2,120,12000

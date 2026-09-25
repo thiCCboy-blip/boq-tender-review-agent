@@ -1,0 +1,7 @@
+TENDER SPECIFICATION
+
+Concrete work: Supply and place concrete for structural elements, measured in cubic metres.
+Reinforcement steel: Supply and fixing of reinforcement steel, measured in tonnes.
+Electrical wiring: Internal electrical wiring and accessories, measured as a lot.
+Technical requirements: Work shall comply with the drawings and approved construction methods.
+Painting work: Interior painting to walls and ceilings, measured in square metres.

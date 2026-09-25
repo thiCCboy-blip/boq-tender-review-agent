@@ -1,0 +1,42 @@
+[
+  {
+    "code": "C-01",
+    "boq_description": "Concrete work",
+    "match_status": "MATCHED",
+    "match_score": 0.5,
+    "unit_status": "OK",
+    "llm_description": "Supply and place concrete for structural elements",
+    "extracted_unit": "cubic metres",
+    "source_excerpt": "Supply and place concrete for structural elements, measured in cubic metres."
+  },
+  {
+    "code": "R-01",
+    "boq_description": "Reinforcement steel",
+    "match_status": "MATCHED",
+    "match_score": 1.0,
+    "unit_status": "OK",
+    "llm_description": "Supply and fix reinforcement steel",
+    "extracted_unit": "tonnes",
+    "source_excerpt": "Supply and fixing of reinforcement steel, measured in tonnes."
+  },
+  {
+    "code": "E-01",
+    "boq_description": "Electrical wiring",
+    "match_status": "MATCHED",
+    "match_score": 1.0,
+    "unit_status": "OK",
+    "llm_description": "Internal electrical wiring and accessories",
+    "extracted_unit": "lot",
+    "source_excerpt": "Internal electrical wiring and accessories, measured as a lot."
+  },
+  {
+    "code": "P-01",
+    "boq_description": "Painting work",
+    "match_status": "MATCHED",
+    "match_score": 0.5,
+    "unit_status": "OK",
+    "llm_description": "Interior painting to walls and ceilings",
+    "extracted_unit": "square metres",
+    "source_excerpt": "Interior painting to walls and ceilings, measured in square metres."
+  }
+]

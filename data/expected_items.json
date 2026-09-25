@@ -1,0 +1,18 @@
+[
+  {
+    "description": "Concrete work",
+    "unit": "m3"
+  },
+  {
+    "description": "Reinforcement steel",
+    "unit": "t"
+  },
+  {
+    "description": "Electrical wiring",
+    "unit": "lot"
+  },
+  {
+    "description": "Painting work",
+    "unit": "m2"
+  }
+]

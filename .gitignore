@@ -1,0 +1,10 @@
+.venv/
+.env
+__pycache__/
+.pytest_cache/
+*.pyc
+data/live_review_report.json
+data/pdf_review_report.json
+data/uploads/
+.agents/
+.claude/

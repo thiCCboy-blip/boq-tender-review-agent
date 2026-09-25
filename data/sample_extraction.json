@@ -1,0 +1,28 @@
+{
+  "items": [
+    {
+      "description": "Supply and place concrete for structural elements",
+      "unit": "cubic metres",
+      "requirement": "Supply and place concrete for structural elements.",
+      "source_excerpt": "Supply and place concrete for structural elements, measured in cubic metres."
+    },
+    {
+      "description": "Supply and fix reinforcement steel",
+      "unit": "tonnes",
+      "requirement": "Supply and fix reinforcement steel.",
+      "source_excerpt": "Supply and fixing of reinforcement steel, measured in tonnes."
+    },
+    {
+      "description": "Internal electrical wiring and accessories",
+      "unit": "lot",
+      "requirement": "Provide internal electrical wiring and accessories.",
+      "source_excerpt": "Internal electrical wiring and accessories, measured as a lot."
+    },
+    {
+      "description": "Interior painting to walls and ceilings",
+      "unit": "square metres",
+      "requirement": "Paint interior walls and ceilings.",
+      "source_excerpt": "Interior painting to walls and ceilings, measured in square metres."
+    }
+  ]
+}
