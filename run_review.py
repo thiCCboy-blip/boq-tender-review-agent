@@ -3,7 +3,7 @@ import json
 
 from comparison import compare_items, load_boq
 from document_loader import load_document
-from llm_review import extract_items
+from llm_review import extract_items_with_metadata
 
 
 def parse_args():
@@ -18,7 +18,7 @@ def main():
     args = parse_args()
     tender_text = load_document(args.tender)
 
-    extraction = extract_items(tender_text)
+    extraction, metadata = extract_items_with_metadata(tender_text)
     extracted_items = extraction.model_dump()["items"]
     boq_items = load_boq(args.boq)
     comparisons = compare_items(boq_items, extracted_items)
@@ -35,6 +35,7 @@ def main():
     report = {
         "extraction": extracted_items,
         "comparisons": comparisons,
+        "metadata": metadata,
     }
     with open(args.output, "w", encoding="utf-8") as file:
         json.dump(report, file, indent=2)

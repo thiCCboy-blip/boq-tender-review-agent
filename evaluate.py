@@ -34,11 +34,8 @@ def evaluate_extraction(expected_items, extracted_items):
     recall = true_positives / (true_positives + false_negatives) if true_positives + false_negatives else 0.0
     f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
     unit_accuracy = unit_correct / true_positives if true_positives else 0.0
-    citation_coverage = (
-        sum(bool(item.get("source_excerpt")) for item in extracted_items) / len(extracted_items)
-        if extracted_items
-        else 0.0
-    )
+    cited_items = sum(bool(item.get("source_excerpt")) for item in extracted_items)
+    citation_coverage = cited_items / len(extracted_items) if extracted_items else 0.0
 
     return {
         "expected_count": len(expected_items),
@@ -46,6 +43,8 @@ def evaluate_extraction(expected_items, extracted_items):
         "true_positives": true_positives,
         "false_positives": false_positives,
         "false_negatives": false_negatives,
+        "unit_correct": unit_correct,
+        "cited_items": cited_items,
         "precision": round(precision, 3),
         "recall": round(recall, 3),
         "f1": round(f1, 3),

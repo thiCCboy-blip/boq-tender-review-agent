@@ -8,6 +8,8 @@ This is a portfolio project built to demonstrate document extraction, structured
 
 [Open the deployed Streamlit app](https://amruu-boq-agent.streamlit.app/)
 
+Project documentation: [case study](CASE_STUDY.md) · [demo script](DEMO_SCRIPT.md)
+
 ## Features
 
 - Loads text, Markdown, and text-based PDF tender documents.
@@ -16,9 +18,10 @@ This is a portfolio project built to demonstrate document extraction, structured
 - Matches BOQ rows to extracted tender items using token-overlap scoring.
 - Normalizes common unit variants such as `cubic metres` → `m3` and `tonnes` → `t`.
 - Runs deterministic quantity and amount checks.
+- Reports latency, token usage, and optional cost estimates for each AI run.
 - Reports precision, recall, F1, unit accuracy, and citation coverage on labelled sample data.
-- Provides a Streamlit interface with JSON report download.
-- Includes automated tests for review logic, document loading, comparison, and evaluation.
+- Provides a Streamlit interface with JSON report download and optional password protection.
+- Includes automated tests for review logic, document loading, comparison, extraction configuration, and evaluation.
 
 ## Tech stack
 
@@ -48,7 +51,12 @@ Edit `.env` and add your OpenAI API key:
 ```text
 OPENAI_API_KEY=your_key_here
 OPENAI_MODEL=gpt-6-luna
+APP_PASSWORD=
+OPENAI_INPUT_COST_PER_MILLION=
+OPENAI_OUTPUT_COST_PER_MILLION=
 ```
+
+`APP_PASSWORD` enables a simple password gate for the web app. The two cost variables are optional; set them to the model's current per-million-token prices if you want cost estimates in reports.
 
 The `.env` file is ignored by Git and must not be committed.
 
@@ -67,16 +75,17 @@ Open `http://localhost:8501` if the browser does not open automatically. Upload 
 3. Select **New app**, then choose `thiCCboy-blip/boq-tender-review-agent`, branch `main`, and main file `app.py`.
 4. Select **Deploy** and wait for the build to finish.
 5. Open the deployed app's **Settings → Secrets**.
-6. Add these secrets, then save and redeploy/restart the app:
+6. Add these secrets using TOML syntax, then save and redeploy/restart the app:
 
-   ```text
-   OPENAI_API_KEY=your_openai_api_key
-   OPENAI_MODEL=gpt-6-luna
+   ```toml
+   OPENAI_API_KEY = "your_openai_api_key"
+   OPENAI_MODEL = "gpt-6-luna"
+   APP_PASSWORD = "use_a_private_password_for_the_demo"
    ```
 
 7. Copy the generated `*.streamlit.app` URL for your README, resume, and portfolio.
 
-Never put an API key in `app.py`, `README.md`, or a committed file. Anyone with the deployed app URL can run the AI step against the configured account, so add authentication and usage limits before sharing it publicly.
+Never put an API key or app password in `app.py`, `README.md`, or a committed file. The password gate is a basic protection, not a full identity system; add proper authentication, rate limits, and usage monitoring before sharing a production deployment.
 
 ## Command-line usage
 
@@ -92,7 +101,7 @@ Review a text-based PDF:
 .\.venv\Scripts\python.exe .\run_review.py --tender data\sample_tender.pdf --boq data\sample_boq.csv --output data\pdf_review_report.json
 ```
 
-The runner prints each BOQ match and writes a JSON report containing the extracted items, match scores, unit status, and source excerpts.
+The runner prints each BOQ match and writes a JSON report containing the extracted items, match scores, unit status, source excerpts, model latency, and token usage.
 
 ## Tests and evaluation
 
@@ -108,12 +117,19 @@ Evaluate a generated review report against the labelled sample expectations:
 .\.venv\Scripts\python.exe .\evaluate.py
 ```
 
-`evaluate.py` currently evaluates the bundled `data/live_review_report.json`. The sample dataset produces perfect scores, which reflects a small controlled fixture rather than a production benchmark.
+Run the multi-case evaluation set, including missing items, extra items, unit mismatches, and missing citations:
+
+```powershell
+.\.venv\Scripts\python.exe .\evaluate_dataset.py
+```
+
+The multi-case fixture currently reports micro precision `0.889`, recall `0.889`, F1 `0.889`, unit accuracy `0.875`, and citation coverage `0.889`. It is a controlled synthetic fixture, not a production benchmark; replace it with representative, consented documents before using the numbers in a business claim.
 
 ## Data and privacy
 
 - Use only non-confidential documents for testing.
-- Uploaded documents are written to a temporary directory for processing and removed afterwards.
+- Uploads are limited to 10 MB per file and are written to a temporary directory for processing and removed afterwards.
+- Set `APP_PASSWORD` in Streamlit Secrets to add a basic access gate to the public demo.
 - Tender text is sent to the configured OpenAI API when the AI step runs.
 - The project does not currently implement OCR for scanned or image-only PDFs.
 - The matching layer is deliberately explainable and deterministic, but it is not a replacement for professional quantity surveying or procurement review.
@@ -121,13 +137,14 @@ Evaluate a generated review report against the labelled sample expectations:
 ## Project structure
 
 ```text
-app.py                  Streamlit web interface
-llm_review.py           Structured OpenAI extraction
+app.py                  Streamlit web interface and access gate
+llm_review.py           Structured OpenAI extraction and run metadata
 run_review.py           End-to-end CLI pipeline
 comparison.py           BOQ matching and unit normalization
 review.py               Deterministic amount and coverage checks
 document_loader.py      TXT, Markdown, and PDF loading
-evaluate.py             Extraction quality metrics
+evaluate.py             Single-report extraction quality metrics
+evaluate_dataset.py     Multi-case evaluation harness
 main.py                 Offline review example
 data/                   Sample inputs, fixtures, and expected items
 test_*.py               Automated tests
@@ -139,4 +156,5 @@ test_*.py               Automated tests
 - Table-aware BOQ extraction for complex spreadsheets.
 - Embedding-based semantic matching in addition to token matching.
 - Human review workflow for flagged discrepancies.
-- Authentication, rate limiting, and deployment for shared use.
+- Identity-based access control, rate limiting, and usage monitoring.
+- Representative customer-approved evaluation data and reliability targets.

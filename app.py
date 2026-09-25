@@ -7,7 +7,7 @@ import streamlit as st
 
 from comparison import compare_items, load_boq
 from document_loader import load_document
-from llm_review import extract_items
+from llm_review import extract_items_with_metadata
 
 
 def get_secret(name, default=None):
@@ -15,6 +15,30 @@ def get_secret(name, default=None):
         return st.secrets[name]
     except Exception:
         return os.getenv(name, default)
+
+
+def has_app_access():
+    configured_password = get_secret("APP_PASSWORD")
+    if not configured_password:
+        return True
+    if st.session_state.get("app_authenticated"):
+        return True
+
+    with st.form("access_form"):
+        password = st.text_input("App password", type="password")
+        submitted = st.form_submit_button("Unlock", type="primary")
+
+    if submitted:
+        if password == configured_password:
+            st.session_state["app_authenticated"] = True
+            st.rerun()
+        st.error("Incorrect password.")
+
+    return False
+
+
+def is_file_too_large(uploaded_file):
+    return uploaded_file is not None and uploaded_file.size > 10 * 1024 * 1024
 
 
 def load_styles():
@@ -200,6 +224,8 @@ with st.sidebar:
     st.markdown("1. Upload a tender document\n2. Upload a BOQ CSV\n3. Review matches and units")
     st.divider()
     st.caption("Use only non-confidential documents. Content is sent to the configured OpenAI API for the AI extraction step.")
+    if not get_secret("APP_PASSWORD"):
+        st.sidebar.warning("Public demo mode: configure APP_PASSWORD in Streamlit Secrets to protect the app.")
 
 st.markdown(
     """
@@ -217,6 +243,9 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+if not has_app_access():
+    st.stop()
 
 feature_one, feature_two, feature_three = st.columns(3)
 with feature_one:
@@ -262,28 +291,39 @@ with st.container(border=True):
 
 if run_review:
     st.session_state.pop("review_report", None)
-    with tempfile.TemporaryDirectory() as directory:
-        tender_path = Path(directory) / tender_file.name
-        boq_path = Path(directory) / boq_file.name
-        tender_path.write_bytes(tender_file.getvalue())
-        boq_path.write_bytes(boq_file.getvalue())
+    oversized_files = [
+        uploaded_file.name
+        for uploaded_file in (tender_file, boq_file)
+        if is_file_too_large(uploaded_file)
+    ]
+    if oversized_files:
+        st.error(f"Files must be smaller than 10 MB: {', '.join(oversized_files)}")
+    else:
+        with tempfile.TemporaryDirectory() as directory:
+            tender_path = Path(directory) / tender_file.name
+            boq_path = Path(directory) / boq_file.name
+            tender_path.write_bytes(tender_file.getvalue())
+            boq_path.write_bytes(boq_file.getvalue())
 
-        try:
-            tender_text = load_document(tender_path)
-            extraction = extract_items(
-                tender_text,
-                api_key=get_secret("OPENAI_API_KEY"),
-                model=get_secret("OPENAI_MODEL", "gpt-6-luna"),
-            )
-            extracted_items = extraction.model_dump()["items"]
-            boq_items = load_boq(boq_path)
-            comparisons = compare_items(boq_items, extracted_items)
-            st.session_state["review_report"] = {
-                "extraction": extracted_items,
-                "comparisons": comparisons,
-            }
-        except Exception as error:
-            st.error(f"Review failed: {error}")
+            try:
+                tender_text = load_document(tender_path)
+                extraction, metadata = extract_items_with_metadata(
+                    tender_text,
+                    api_key=get_secret("OPENAI_API_KEY"),
+                    model=get_secret("OPENAI_MODEL", "gpt-6-luna"),
+                    input_cost_per_million=get_secret("OPENAI_INPUT_COST_PER_MILLION"),
+                    output_cost_per_million=get_secret("OPENAI_OUTPUT_COST_PER_MILLION"),
+                )
+                extracted_items = extraction.model_dump()["items"]
+                boq_items = load_boq(boq_path)
+                comparisons = compare_items(boq_items, extracted_items)
+                st.session_state["review_report"] = {
+                    "extraction": extracted_items,
+                    "comparisons": comparisons,
+                    "metadata": metadata,
+                }
+            except Exception as error:
+                st.error(f"Review failed: {error}")
 
 if "review_report" in st.session_state:
     report = st.session_state["review_report"]
@@ -297,6 +337,18 @@ if "review_report" in st.session_state:
     item_column.metric("BOQ items", len(comparisons))
     matched_column.metric("Matched items", matched_count)
     rate_column.metric("Match rate", f"{match_rate:.0%}")
+
+    metadata = report.get("metadata", {})
+    if metadata:
+        token_count = metadata.get("total_tokens")
+        token_text = f"{token_count:,} tokens" if isinstance(token_count, int) else "Token count unavailable"
+        cost = metadata.get("estimated_cost_usd")
+        cost_text = f"${cost:.6f} estimated" if isinstance(cost, (int, float)) else "Cost not configured"
+        st.caption(
+            f"Model: {metadata.get('model', 'unknown')} · Latency: {metadata.get('latency_ms', 'unknown')} ms · "
+            f"{token_text} · {cost_text}"
+        )
+
     st.dataframe(comparisons, use_container_width=True, hide_index=True)
     st.download_button(
         "Download JSON report",

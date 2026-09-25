@@ -1,0 +1,162 @@
+[
+  {
+    "case_id": "concrete-basic",
+    "name": "Basic concrete extraction",
+    "expected_items": [
+      {
+        "description": "Concrete work",
+        "unit": "m3",
+        "source_excerpt": "Concrete work measured in cubic metres."
+      }
+    ],
+    "extracted_items": [
+      {
+        "description": "Supply and place concrete",
+        "unit": "m3",
+        "source_excerpt": "Concrete work measured in cubic metres."
+      }
+    ]
+  },
+  {
+    "case_id": "rebar-unit-variant",
+    "name": "Unit variant normalization",
+    "expected_items": [
+      {
+        "description": "Reinforcement steel",
+        "unit": "t",
+        "source_excerpt": "Reinforcement steel measured in tonnes."
+      }
+    ],
+    "extracted_items": [
+      {
+        "description": "Reinforcement steel",
+        "unit": "tonnes",
+        "source_excerpt": "Reinforcement steel measured in tonnes."
+      }
+    ]
+  },
+  {
+    "case_id": "electrical-lot",
+    "name": "Lot-based electrical item",
+    "expected_items": [
+      {
+        "description": "Electrical wiring",
+        "unit": "lot",
+        "source_excerpt": "Internal electrical wiring and accessories, measured as a lot."
+      }
+    ],
+    "extracted_items": [
+      {
+        "description": "Internal electrical wiring and accessories",
+        "unit": "lot",
+        "source_excerpt": "Internal electrical wiring and accessories, measured as a lot."
+      }
+    ]
+  },
+  {
+    "case_id": "painting-area",
+    "name": "Area-based painting item",
+    "expected_items": [
+      {
+        "description": "Painting work",
+        "unit": "m2",
+        "source_excerpt": "Interior painting to walls and ceilings, measured in square metres."
+      }
+    ],
+    "extracted_items": [
+      {
+        "description": "Interior painting",
+        "unit": "square metres",
+        "source_excerpt": "Interior painting to walls and ceilings, measured in square metres."
+      }
+    ]
+  },
+  {
+    "case_id": "missing-item",
+    "name": "Missing extracted item",
+    "expected_items": [
+      {
+        "description": "Concrete work",
+        "unit": "m3",
+        "source_excerpt": "Concrete work measured in cubic metres."
+      },
+      {
+        "description": "Painting work",
+        "unit": "m2",
+        "source_excerpt": "Painting work measured in square metres."
+      }
+    ],
+    "extracted_items": [
+      {
+        "description": "Concrete work",
+        "unit": "m3",
+        "source_excerpt": "Concrete work measured in cubic metres."
+      }
+    ]
+  },
+  {
+    "case_id": "unexpected-extra-item",
+    "name": "Unexpected extra item",
+    "expected_items": [
+      {
+        "description": "Concrete work",
+        "unit": "m3",
+        "source_excerpt": "Concrete work measured in cubic metres."
+      }
+    ],
+    "extracted_items": [
+      {
+        "description": "Concrete work",
+        "unit": "m3",
+        "source_excerpt": "Concrete work measured in cubic metres."
+      },
+      {
+        "description": "Roofing work",
+        "unit": "m2",
+        "source_excerpt": "Roofing work measured in square metres."
+      }
+    ]
+  },
+  {
+    "case_id": "missing-citation",
+    "name": "Missing source excerpt",
+    "expected_items": [
+      {
+        "description": "Concrete work",
+        "unit": "m3",
+        "source_excerpt": "Concrete work measured in cubic metres."
+      }
+    ],
+    "extracted_items": [
+      {
+        "description": "Concrete work",
+        "unit": "m3",
+        "source_excerpt": ""
+      }
+    ]
+  },
+  {
+    "case_id": "empty-document",
+    "name": "No explicit BOQ items",
+    "expected_items": [],
+    "extracted_items": []
+  },
+  {
+    "case_id": "unit-mismatch",
+    "name": "Incorrect extracted unit",
+    "expected_items": [
+      {
+        "description": "Reinforcement steel",
+        "unit": "t",
+        "source_excerpt": "Reinforcement steel measured in tonnes."
+      }
+    ],
+    "extracted_items": [
+      {
+        "description": "Reinforcement steel",
+        "unit": "m3",
+        "source_excerpt": "Reinforcement steel measured in tonnes."
+      }
+    ]
+  }
+]
