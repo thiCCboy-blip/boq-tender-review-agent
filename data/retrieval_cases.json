@@ -1,0 +1,242 @@
+[
+  {
+    "case_id": "syn-rebar",
+    "name": "Synonym: reinforcement steel vs rebar",
+    "query": "Reinforcement steel",
+    "candidates": [
+      { "description": "Supply and place reinforcement steel to columns", "unit": "t" },
+      { "description": "Rebar fabrication and fixing", "unit": "t" },
+      { "description": "Concrete work to foundations", "unit": "m3" },
+      { "description": "Formwork to beams and soffits", "unit": "m2" }
+    ],
+    "expected": "Rebar fabrication and fixing"
+  },
+  {
+    "case_id": "syn-excavation",
+    "name": "Synonym: excavation vs digging out",
+    "query": "Bulk excavation",
+    "candidates": [
+      { "description": "Bulk excavation to basement", "unit": "m3" },
+      { "description": "Digging out and disposal of excavated material", "unit": "m3" },
+      { "description": "Backfilling around foundations", "unit": "m3" },
+      { "description": "Shoring to excavation sides", "unit": "m2" }
+    ],
+    "expected": "Digging out and disposal of excavated material"
+  },
+  {
+    "case_id": "syn-paint",
+    "name": "Synonym: painting vs decoration",
+    "query": "Painting work",
+    "candidates": [
+      { "description": "Interior painting to walls and ceilings", "unit": "m2" },
+      { "description": "Decoration of walls to internal finish", "unit": "m2" },
+      { "description": "Floor screeding", "unit": "m2" },
+      { "description": "Ceiling plastering", "unit": "m2" }
+    ],
+    "expected": "Decoration of walls to internal finish"
+  },
+  {
+    "case_id": "syn-paving",
+    "name": "Synonym: paving vs surfacing",
+    "query": "External paving",
+    "candidates": [
+      { "description": "External paving to walkways", "unit": "m2" },
+      { "description": "Tarmac surfacing to car park bays", "unit": "m2" },
+      { "description": "Kerb laying", "unit": "m" },
+      { "description": "Line marking to parking bays", "unit": "m" }
+    ],
+    "expected": "Tarmac surfacing to car park bays"
+  },
+  {
+    "case_id": "syn-insulation",
+    "name": "Synonym: insulation vs thermal lagging",
+    "query": "Thermal insulation",
+    "candidates": [
+      { "description": "Thermal insulation to roof deck", "unit": "m2" },
+      { "description": "Insulation and vapour barrier to cold roof", "unit": "m2" },
+      { "description": "Waterproofing to roof", "unit": "m2" },
+      { "description": "Cladding to external walls", "unit": "m2" }
+    ],
+    "expected": "Insulation and vapour barrier to cold roof"
+  },
+  {
+    "case_id": "syn-plumbing",
+    "name": "Synonym: plumbing vs water supply",
+    "query": "Water supply installation",
+    "candidates": [
+      { "description": "Above ground water supply installation", "unit": "lot" },
+      { "description": "Soil and waste plumbing installation", "unit": "lot" },
+      { "description": "Rainwater goods installation", "unit": "m" },
+      { "description": "Sanitaryware supply and fix", "unit": "lot" }
+    ],
+    "expected": "Soil and waste plumbing installation"
+  },
+  {
+    "case_id": "hard-negative-drainage",
+    "name": "Hard negative: drainage vs water supply",
+    "query": "Surface water drainage",
+    "candidates": [
+      { "description": "Surface water drainage to gullies", "unit": "m" },
+      { "description": "Above ground water supply installation", "unit": "lot" },
+      { "description": "Foul water drainage to manholes", "unit": "m" },
+      { "description": "Stormwater attenuation", "unit": "lot" }
+    ],
+    "expected": "Surface water drainage to gullies"
+  },
+  {
+    "case_id": "hard-negative-hvac",
+    "name": "Hard negative: ventilation vs cooling",
+    "query": "Mechanical ventilation",
+    "candidates": [
+      { "description": "Mechanical ventilation to toilets", "unit": "lot" },
+      { "description": "Supply air handling units", "unit": "lot" },
+      { "description": "Split system cooling", "unit": "lot" },
+      { "description": "Unit heaters to entrance lobby", "unit": "lot" }
+    ],
+    "expected": "Mechanical ventilation to toilets"
+  },
+  {
+    "case_id": "hard-negative-shoring",
+    "name": "Hard negative: shoring vs formwork",
+    "query": "Shoring",
+    "candidates": [
+      { "description": "Shoring to excavation sides", "unit": "m2" },
+      { "description": "Formwork to beams and soffits", "unit": "m2" },
+      { "description": "Falsework to bridge deck", "unit": "m2" },
+      { "description": "Centring to suspended slabs", "unit": "m2" }
+    ],
+    "expected": "Shoring to excavation sides"
+  },
+  {
+    "case_id": "hard-negative-landscape",
+    "name": "Hard negative: soft landscape vs hard landscape",
+    "query": "Soft landscaping",
+    "candidates": [
+      { "description": "Soft landscaping to lawn areas", "unit": "m2" },
+      { "description": "Hard landscaping to paved areas", "unit": "m2" },
+      { "description": "Shrub planting", "unit": "m2" },
+      { "description": "Topsoil to planted beds", "unit": "m3" }
+    ],
+    "expected": "Shrub planting"
+  },
+  {
+    "case_id": "syn-ductwork",
+    "name": "Synonym: ductwork vs air distribution",
+    "query": "Ductwork",
+    "candidates": [
+      { "description": "Galvanised ductwork to supply and return", "unit": "m2" },
+      { "description": "Air distribution sheet metalwork", "unit": "m2" },
+      { "description": "Duct insulation", "unit": "m2" },
+      { "description": "Grilles and diffusers", "unit": "lot" }
+    ],
+    "expected": "Air distribution sheet metalwork"
+  },
+  {
+    "case_id": "syn-masonry",
+    "name": "Synonym: blockwork vs masonry",
+    "query": "Blockwork",
+    "candidates": [
+      { "description": "Blockwork to internal partitions", "unit": "m2" },
+      { "description": "Masonry work to walls", "unit": "m2" },
+      { "description": "Brick veneer to facades", "unit": "m2" },
+      { "description": "Plastering to internal walls", "unit": "m2" }
+    ],
+    "expected": "Masonry work to walls"
+  },
+  {
+    "case_id": "hard-negative-flooring",
+    "name": "Hard negative: flooring vs ceiling",
+    "query": "Floor finish",
+    "candidates": [
+      { "description": "Floor finish to corridors", "unit": "m2" },
+      { "description": "Ceiling finish to corridors", "unit": "m2" },
+      { "description": "Floor screeding", "unit": "m2" },
+      { "description": "Coving to floor junctions", "unit": "m" }
+    ],
+    "expected": "Floor screeding"
+  },
+  {
+    "case_id": "syn-roofing",
+    "name": "Synonym: roofing vs roof covering",
+    "query": "Roof covering",
+    "candidates": [
+      { "description": "Roof covering to flat roof", "unit": "m2" },
+      { "description": "Roofing membrane to flat roof", "unit": "m2" },
+      { "description": "Rainwater disposal to roof outlets", "unit": "m" },
+      { "description": "Roof edge upstand", "unit": "m" }
+    ],
+    "expected": "Roofing membrane to flat roof"
+  },
+  {
+    "case_id": "hard-negative-protection",
+    "name": "Hard negative: protection vs cleaning",
+    "query": "Temporary protection",
+    "candidates": [
+      { "description": "Temporary protection to completed works", "unit": "lot" },
+      { "description": "Final cleaning to building", "unit": "lot" },
+      { "description": "Dust sheet protection to fittings", "unit": "lot" },
+      { "description": "Snagging and making good", "unit": "lot" }
+    ],
+    "expected": "Dust sheet protection to fittings"
+  },
+  {
+    "case_id": "syn-lifting",
+    "name": "Synonym: lifting gear vs crane",
+    "query": "Lifting operations",
+    "candidates": [
+      { "description": "Tower crane hire and erection", "unit": "lot" },
+      { "description": "Lifting gear and tackle provision", "unit": "lot" },
+      { "description": "Forklift hire", "unit": "lot" },
+      { "description": "Hoist to scaffold", "unit": "lot" }
+    ],
+    "expected": "Lifting gear and tackle provision"
+  },
+  {
+    "case_id": "hard-negative-tiling",
+    "name": "Hard negative: wall tiling vs floor tiling",
+    "query": "Tiling to wet areas",
+    "candidates": [
+      { "description": "Tiling to wet area walls", "unit": "m2" },
+      { "description": "Tiling to wet area floors", "unit": "m2" },
+      { "description": "Waterproof tanking to wet areas", "unit": "m2" },
+      { "description": "Sanitaryware supply and fix", "unit": "lot" }
+    ],
+    "expected": "Tiling to wet area floors"
+  },
+  {
+    "case_id": "syn-scaffold",
+    "name": "Synonym: scaffold vs access",
+    "query": "Access scaffolding",
+    "candidates": [
+      { "description": "Access scaffolding to facade", "unit": "m2" },
+      { "description": "Independent access tower provision", "unit": "lot" },
+      { "description": "Mobile tower hire", "unit": "lot" },
+      { "description": "Temporary edge protection", "unit": "m" }
+    ],
+    "expected": "Independent access tower provision"
+  },
+  {
+    "case_id": "hard-negative-testing",
+    "name": "Hard negative: testing vs commissioning",
+    "query": "Testing and commissioning",
+    "candidates": [
+      { "description": "Testing and commissioning of systems", "unit": "lot" },
+      { "description": "Third party compliance testing", "unit": "lot" },
+      { "description": "Systems handover documentation", "unit": "lot" },
+      { "description": "Operator training", "unit": "lot" }
+    ],
+    "expected": "Third party compliance testing"
+  },
+  {
+    "case_id": "syn-secure",
+    "name": "Synonym: security vs access control",
+    "query": "Security installation",
+    "candidates": [
+      { "description": "Security installation to entrances", "unit": "lot" },
+      { "description": "Access control and intercom system", "unit": "lot" },
+      { "description": "CCTV system", "unit": "lot" },
+      { "description": "Fire alarm system", "unit": "lot" }
+    ],
+    "expected": "Access control and intercom system"
+  }
+]

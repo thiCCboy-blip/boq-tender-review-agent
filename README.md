@@ -17,6 +17,7 @@ Project documentation: [case study](CASE_STUDY.md) · [demo script](DEMO_SCRIPT.
 - Uses OpenAI Structured Outputs with Pydantic schemas.
 - Matches BOQ rows to extracted tender items using token-overlap scoring.
 - Normalizes common unit variants such as `cubic metres` → `m3` and `tonnes` → `t`.
+- Compares token-overlap, embedding, and hybrid retrieval strategies against a labelled set of synonym and hard-negative cases.
 - Runs deterministic quantity and amount checks.
 - Reports latency, token usage, and optional cost estimates for each AI run.
 - Reports precision, recall, F1, unit accuracy, and citation coverage on labelled sample data.
@@ -125,6 +126,24 @@ Run the multi-case evaluation set, including missing items, extra items, unit mi
 
 The multi-case fixture currently reports micro precision `0.889`, recall `0.889`, F1 `0.889`, unit accuracy `0.875`, and citation coverage `0.889`. It is a controlled synthetic fixture, not a production benchmark; replace it with representative, consented documents before using the numbers in a business claim.
 
+### Retrieval strategy comparison
+
+The matching layer was originally token-overlap only, on the assumption that it was explainable and sufficient. A labelled 20-case fixture was built to test that assumption, using the two cases that break a lexical matcher: synonym pairs where the same work is described in different words, and hard negatives where distractors are near-identical to the query.
+
+```powershell
+.\.venv\Scripts\python.exe .\evaluate_retrieval.py
+```
+
+| Strategy | hit@1 | hit@3 | MRR |
+| --- | ---: | ---: | ---: |
+| `token_overlap` | 0.200 | 1.000 | 0.575 |
+
+The lexical matcher places the correct item in the top three candidates for every case, but ranks it first in only one in five. Every failure is a synonym or paraphrase case: `syn-rebar` puts `Reinforcement steel` second to `Rebar fabrication and fixing` because the two share almost no tokens, while the two are the same work item to anyone who reads construction descriptions. That is a real failure mode, not a metric artifact, and it argues for the hybrid strategy.
+
+The `embedding` and `hybrid` rows are reported as skipped when no API key or warm cache is available, so the baseline result is still reproducible on a clean machine. Adding credits and re-running populates `data/embedding_cache.json`, after which the comparison is reproducible offline.
+
+As with the extraction fixture, these 20 cases are synthetic and were written by the author. They demonstrate a failure mode and a method for measuring it; they are not a benchmark of production retrieval quality.
+
 ## Data and privacy
 
 - Use only non-confidential documents for testing.
@@ -133,7 +152,9 @@ The multi-case fixture currently reports micro precision `0.889`, recall `0.889`
 - Leave `APP_PASSWORD` blank for public live mode, or set it in Streamlit Secrets to require a password before review.
 - Tender text is sent to the configured OpenAI API when the AI step runs.
 - The project does not currently implement OCR for scanned or image-only PDFs.
-- The matching layer is deliberately explainable and deterministic, but it is not a replacement for professional quantity surveying or procurement review.
+- The matching layer is deliberately explainable and deterministic, but token-overlap scoring measurably underperforms on synonym and paraphrase pairs. See the retrieval strategy comparison for measured results.
+- The retrieval comparison covers 20 synthetic cases written by the author; `embedding` and `hybrid` were not run because the API account had no remaining credit.
+- The application is an assistive tool, not a replacement for professional quantity surveying or procurement review.
 
 ## Project structure
 
@@ -142,10 +163,12 @@ app.py                  Streamlit web interface and access gate
 llm_review.py           Structured OpenAI extraction and run metadata
 run_review.py           End-to-end CLI pipeline
 comparison.py           BOQ matching and unit normalization
+retrieval.py            Pluggable retrieval strategies and reciprocal rank fusion
 review.py               Deterministic amount and coverage checks
 document_loader.py      TXT, Markdown, and PDF loading
 evaluate.py             Single-report extraction quality metrics
 evaluate_dataset.py     Multi-case evaluation harness
+evaluate_retrieval.py   Retrieval strategy comparison harness
 main.py                 Offline review example
 data/                   Sample inputs, fixtures, and expected items
 test_*.py               Automated tests
@@ -155,7 +178,8 @@ test_*.py               Automated tests
 
 - OCR support for scanned PDFs.
 - Table-aware BOQ extraction for complex spreadsheets.
-- Embedding-based semantic matching in addition to token matching.
+- Enable the hybrid retrieval strategy and re-measure the extraction fixture, since the current matching layer is lexical only and measurably weaker on synonyms.
+- Expand the retrieval fixture with real, consented tender descriptions.
 - Human review workflow for flagged discrepancies.
 - Identity-based access control, rate limiting, and usage monitoring.
 - Representative customer-approved evaluation data and reliability targets.

@@ -19,7 +19,8 @@ Quantity surveying and tender teams often compare a Bill of Quantities against l
 | --- | --- | --- |
 | Document ingestion | `document_loader.py` and `pypdf` | Read TXT, Markdown, and text-based PDF documents; label PDF pages |
 | Structured extraction | `llm_review.py`, OpenAI Responses API, Pydantic | Return validated JSON-shaped tender items |
-| Deterministic review | `comparison.py` and `review.py` | Match descriptions, normalize units, and check amounts/coverage |
+| Matching and retrieval | `comparison.py`, `retrieval.py` | Rank candidates by token overlap, embedding similarity, or fused ranks; normalize units |
+| Deterministic review | `review.py` | Check amounts and coverage |
 | Evaluation | `evaluate.py` and `evaluate_dataset.py` | Measure extraction precision, recall, F1, units, and citations |
 | Interface | `app.py` and Streamlit | Provide upload, review, metrics, and report download |
 | Operations | Streamlit Community Cloud | Deploy the app from GitHub and store secrets outside the repository |
@@ -49,6 +50,23 @@ Current micro metrics from `evaluate_dataset.py`:
 
 These are deliberately non-perfect results to demonstrate error analysis. They are not a production benchmark. A production evaluation would use representative, consented tender documents and domain-expert adjudication.
 
+## Retrieval strategy comparison
+
+The matching layer uses token-overlap scoring, chosen for explainability rather than accuracy. To find out how much accuracy that costs, a 20-case labelled fixture was built from the two situations that break a lexical matcher:
+
+- **Synonym and paraphrase pairs** where the same work item is named differently (`Reinforcement steel` / `Rebar fabrication and fixing`).
+- **Hard negatives** where distractors differ from the query by one distinguishing attribute (`Tiling to wet area walls` / `Tiling to wet area floors`).
+
+| Strategy | hit@1 | hit@3 | MRR |
+| --- | ---: | ---: | ---: |
+| `token_overlap` | 0.200 | 1.000 | 0.575 |
+
+The correct item is in the top three for all 20 cases but first in only four. The diagnosis is unambiguous: every failure is a case where the expected description shares no distinguishing tokens with the query. The matcher retrieves the right *neighbourhood* and then orders it incorrectly, which is the specific failure a domain user would report as "it found the section but picked the wrong line."
+
+`embedding` and `hybrid` strategies are implemented in `retrieval.py`; hybrid uses reciprocal rank fusion, which combines the two rankings by position rather than by score, avoiding a tuned weight between an incomparable token-overlap score and a cosine similarity. Both were skipped in the recorded run because the API account had no remaining credit, and the harness reports the skip reason rather than silently presenting fewer strategies. A populated embedding cache makes the comparison reproducible offline.
+
+An earlier hypothesis that the embedding path would be available was not confirmed by this run. Closing it requires adding credit and re-running; the honest current state is that the lexical weakness is measured and the fix is implemented but unverified.
+
 ## Reliability and safety decisions
 
 - The model is instructed not to invent quantities, rates, or requirements.
@@ -61,7 +79,8 @@ These are deliberately non-perfect results to demonstrate error analysis. They a
 
 ## Trade-offs and limitations
 
-- Token-overlap matching is explainable but can miss synonyms and complex scope language.
+- Token-overlap matching is explainable but measurably weaker on synonyms and paraphrase; `syn-rebar` and `syn-excavation` rank the correct item third.
+- Reciprocal rank fusion promotes candidates that both rankers agree on, but cannot break a tie where the two rankers merely swapped two items, because it scores by position and mirrored orderings are symmetric. This is a property of the method, not a defect, and is pinned by a test.
 - Scanned PDFs require OCR, which is not implemented yet.
 - The current application is a public prototype, not an authenticated enterprise service.
 - The evaluation fixture is synthetic and small; it should be replaced with customer-approved data.
