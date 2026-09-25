@@ -4,6 +4,10 @@ An AI-assisted application that reviews a Bill of Quantities (BOQ) against a ten
 
 This is a portfolio project built to demonstrate document extraction, structured LLM outputs, deterministic validation, evaluation, and a working web interface.
 
+## Live demo
+
+[Open the deployed Streamlit app](https://boq-tender-review-agent-cfxirng3qtcypetdrvnqbu.streamlit.app/)
+
 ## Features
 
 - Loads text, Markdown, and text-based PDF tender documents.
