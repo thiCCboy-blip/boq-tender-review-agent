@@ -56,6 +56,24 @@ The `.env` file is ignored by Git and must not be committed.
 
 Open `http://localhost:8501` if the browser does not open automatically. Upload a tender document and a BOQ CSV, then select **Run review**.
 
+## Deploy to Streamlit Community Cloud
+
+1. Push the project to GitHub; this repository already contains the required `app.py` and `requirements.txt`.
+2. Open `https://share.streamlit.io` and sign in with GitHub.
+3. Select **New app**, then choose `thiCCboy-blip/boq-tender-review-agent`, branch `main`, and main file `app.py`.
+4. Select **Deploy** and wait for the build to finish.
+5. Open the deployed app's **Settings → Secrets**.
+6. Add these secrets, then save and redeploy/restart the app:
+
+   ```text
+   OPENAI_API_KEY=your_openai_api_key
+   OPENAI_MODEL=gpt-6-luna
+   ```
+
+7. Copy the generated `*.streamlit.app` URL for your README, resume, and portfolio.
+
+Never put an API key in `app.py`, `README.md`, or a committed file. Anyone with the deployed app URL can run the AI step against the configured account, so add authentication and usage limits before sharing it publicly.
+
 ## Command-line usage
 
 Review the bundled text sample:

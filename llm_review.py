@@ -18,14 +18,14 @@ class TenderExtraction(BaseModel):
     items: list[ExtractedItem]
 
 
-def extract_items(tender_text):
-    api_key = os.getenv("OPENAI_API_KEY")
+def extract_items(tender_text, api_key=None, model=None):
+    api_key = api_key or os.getenv("OPENAI_API_KEY")
     if not api_key or api_key == "replace_with_your_key":
-        raise RuntimeError("Set OPENAI_API_KEY in the .env file before running the AI step.")
+        raise RuntimeError("Set OPENAI_API_KEY in the environment before running the AI step.")
 
     client = OpenAI(api_key=api_key)
     response = client.responses.parse(
-        model=os.getenv("OPENAI_MODEL", "gpt-6-luna"),
+        model=model or os.getenv("OPENAI_MODEL", "gpt-6-luna"),
         input=[
             {
                 "role": "system",

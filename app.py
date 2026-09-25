@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 from pathlib import Path
 
@@ -7,6 +8,13 @@ import streamlit as st
 from comparison import compare_items, load_boq
 from document_loader import load_document
 from llm_review import extract_items
+
+
+def get_secret(name, default=None):
+    try:
+        return st.secrets[name]
+    except Exception:
+        return os.getenv(name, default)
 
 
 st.set_page_config(page_title="BOQ Tender Review Agent", layout="wide")
@@ -30,7 +38,11 @@ if st.button(
 
         try:
             tender_text = load_document(tender_path)
-            extraction = extract_items(tender_text)
+            extraction = extract_items(
+                tender_text,
+                api_key=get_secret("OPENAI_API_KEY"),
+                model=get_secret("OPENAI_MODEL", "gpt-6-luna"),
+            )
             extracted_items = extraction.model_dump()["items"]
             boq_items = load_boq(boq_path)
             comparisons = compare_items(boq_items, extracted_items)
